@@ -12,10 +12,10 @@ import flatButtonExampleComplexCode from '!raw!./ExampleComplex';
 import FlatButtonExampleComplex from './ExampleComplex';
 import flatButtonExampleIconCode from '!raw!./ExampleIcon';
 import FlatButtonExampleIcon from './ExampleIcon';
-import flatButtonCode from '!raw!material-ui/lib/FlatButton/FlatButton';
+import flatButtonCode from '!raw!material-ui/FlatButton/FlatButton';
 
 const descriptions = {
-  simple: '`FlatButton` with default color, `primary`, `secondary` and and `disabled` props applied.',
+  simple: '`FlatButton` with default color, `primary`, `secondary` and `disabled` props applied.',
   complex: 'The first example uses an `input` as a child component, ' +
   'the next has next has an [SVG Icon](/#/components/svg-icon), with the label positioned after. ' +
   'The final example uses a [Font Icon](/#/components/font-icon), and is wrapped in an anchor tag.',

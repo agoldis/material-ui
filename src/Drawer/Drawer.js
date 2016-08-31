@@ -139,7 +139,7 @@ class Drawer extends Component {
 
   getStyles() {
     const muiTheme = this.context.muiTheme;
-    const theme = muiTheme.navDrawer;
+    const theme = muiTheme.drawer;
 
     const x = this.getTranslateMultiplier() * (this.state.open ? 0 : this.getMaxTranslateX());
 
@@ -148,10 +148,10 @@ class Drawer extends Component {
         height: '100%',
         width: this.props.width || theme.width,
         position: 'fixed',
-        zIndex: muiTheme.zIndex.navDrawer,
+        zIndex: muiTheme.zIndex.drawer,
         left: 0,
         top: 0,
-        transform: `translate3d(${x}px, 0, 0)`,
+        transform: `translate(${x}px, 0)`,
         transition: !this.state.swiping && transitions.easeOut(null, 'transform', null),
         backgroundColor: theme.color,
         overflow: 'auto',
@@ -198,7 +198,7 @@ class Drawer extends Component {
   };
 
   getMaxTranslateX() {
-    const width = this.props.width || this.context.muiTheme.navDrawer.width;
+    const width = this.props.width || this.context.muiTheme.drawer.width;
     return width + 10;
   }
 
@@ -259,7 +259,7 @@ class Drawer extends Component {
 
   setPosition(translateX) {
     const drawer = ReactDOM.findDOMNode(this.refs.clickAwayableElement);
-    const transformCSS = `translate3d(${(this.getTranslateMultiplier() * translateX)}px, 0, 0)`;
+    const transformCSS = `translate(${(this.getTranslateMultiplier() * translateX)}px, 0)`;
     this.refs.overlay.setOpacity(1 - translateX / this.getMaxTranslateX());
     autoPrefix.set(drawer.style, 'transform', transformCSS);
   }
@@ -373,7 +373,7 @@ class Drawer extends Component {
         className={className}
         style={style}
       >
-        <EventListener elementName="window" onKeyUp={this.handleKeyUp} />
+        <EventListener target="window" onKeyUp={this.handleKeyUp} />
         {overlay}
         <Paper
           ref="clickAwayableElement"

@@ -38,7 +38,7 @@ class TransitionItem extends Component {
     this.setState({
       style: {
         opacity: 1,
-        transform: `translate3d(0, ${spacing.desktopKeylineIncrement}px, 0)`,
+        transform: `translate(0, ${spacing.desktopKeylineIncrement}px)`,
       },
     });
 
@@ -49,7 +49,7 @@ class TransitionItem extends Component {
     this.setState({
       style: {
         opacity: 0,
-        transform: 'translate3d(0, 0, 0)',
+        transform: 'translate(0, 0)',
       },
     });
 
@@ -313,7 +313,7 @@ class DialogInline extends Component {
       <div className={className} style={prepareStyles(styles.root)}>
         {open &&
           <EventListener
-            elementName="window"
+            target="window"
             onKeyUp={this.handleKeyUp}
             onResize={this.handleResize}
           />
@@ -447,6 +447,10 @@ class Dialog extends Component {
      * Overrides the inline-styles of the title's root container element.
      */
     titleStyle: PropTypes.object,
+  };
+
+  static contextTypes = {
+    muiTheme: PropTypes.object.isRequired,
   };
 
   static defaultProps = {

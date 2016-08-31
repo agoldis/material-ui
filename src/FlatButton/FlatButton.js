@@ -6,8 +6,10 @@ import EnhancedButton from '../internal/EnhancedButton';
 import FlatButtonLabel from './FlatButtonLabel';
 
 function validateLabel(props, propName, componentName) {
-  if (!props.children && !props.label && !props.icon) {
-    return new Error(`Required prop label or children or icon was not specified in ${componentName}.`);
+  if (process.env.NODE_ENV !== 'production') {
+    if (!props.children && (props.label !== 0 && !props.label) && !props.icon) {
+      return new Error(`Required prop label or children or icon was not specified in ${componentName}.`);
+    }
   }
 }
 
@@ -38,7 +40,7 @@ class FlatButton extends Component {
      */
     hoverColor: PropTypes.string,
     /**
-     * URL to link to when button clicked if `linkButton` is set to true.
+     * The URL to link to when the button is clicked.
      */
     href: PropTypes.string,
     /**
@@ -61,33 +63,17 @@ class FlatButton extends Component {
      */
     labelStyle: PropTypes.object,
     /**
-     * Enables use of `href` property to provide a URL to link to if set to true.
-     */
-    linkButton: PropTypes.bool,
-    /**
      * Callback function fired when the element is focused or blurred by the keyboard.
      *
      * @param {object} event `focus` or `blur` event targeting the element.
      * @param {boolean} isKeyboardFocused Indicates whether the element is focused.
      */
     onKeyboardFocus: PropTypes.func,
-    /**
-     * Callback function fired when the mouse enters the element.
-     *
-     * @param {object} event `mouseenter` event targeting the element.
-     */
+    /** @ignore */
     onMouseEnter: PropTypes.func,
-    /**
-     * Callback function fired when the mouse leaves the element.
-     *
-     * @param {object} event `mouseleave` event targeting the element.
-     */
+    /** @ignore */
     onMouseLeave: PropTypes.func,
-    /**
-     * Callback function fired when the element is touched.
-     *
-     * @param {object} event `touchstart` event targeting the element.
-     */
+    /** @ignore */
     onTouchStart: PropTypes.func,
     /**
      * If true, colors button according to
@@ -131,6 +117,14 @@ class FlatButton extends Component {
     touch: false,
   };
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.disabled) {
+      this.setState({
+        hovered: false,
+      });
+    }
+  }
+
   handleKeyboardFocus = (event, isKeyboardFocused) => {
     this.setState({isKeyboardFocused: isKeyboardFocused});
     this.props.onKeyboardFocus(event, isKeyboardFocused);
@@ -162,7 +156,6 @@ class FlatButton extends Component {
       label,
       labelStyle,
       labelPosition,
-      linkButton,
       primary,
       rippleColor,
       secondary,
@@ -201,22 +194,18 @@ class FlatButton extends Component {
     const hovered = (this.state.hovered || this.state.isKeyboardFocused) && !disabled;
 
     const mergedRootStyles = Object.assign({}, {
+      height: buttonHeight,
+      lineHeight: `${buttonHeight}px`,
+      minWidth: buttonMinWidth,
       color: defaultTextColor,
       transition: transitions.easeOut(),
-      fontSize: fontSize,
-      letterSpacing: 0,
-      textTransform: textTransform,
-      fontWeight: fontWeight,
       borderRadius: 2,
       userSelect: 'none',
       position: 'relative',
       overflow: 'hidden',
       backgroundColor: hovered ? buttonHoverColor : buttonBackgroundColor,
-      lineHeight: `${buttonHeight}px`,
-      minWidth: buttonMinWidth,
       padding: 0,
       margin: 0,
-      // That's the default value for a button but not a link
       textAlign: 'center',
     }, style);
 
@@ -224,14 +213,14 @@ class FlatButton extends Component {
     const labelStyleIcon = {};
 
     if (icon) {
+      const iconStyles = Object.assign({
+        verticalAlign: 'middle',
+        marginLeft: label && labelPosition !== 'before' ? 12 : 0,
+        marginRight: label && labelPosition === 'before' ? 12 : 0,
+      }, icon.props.style);
       iconCloned = React.cloneElement(icon, {
-        color: mergedRootStyles.color,
-        style: {
-          lineHeight: `${buttonHeight}px`,
-          verticalAlign: 'middle',
-          marginLeft: label && labelPosition !== 'before' ? 12 : 0,
-          marginRight: label && labelPosition === 'before' ? 12 : 0,
-        },
+        color: icon.props.color || mergedRootStyles.color,
+        style: iconStyles,
       });
 
       if (labelPosition === 'before') {
@@ -241,8 +230,15 @@ class FlatButton extends Component {
       }
     }
 
+    const mergedLabelStyles = Object.assign({
+      letterSpacing: 0,
+      textTransform: textTransform,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    }, labelStyleIcon, labelStyle);
+
     const labelElement = label ? (
-      <FlatButtonLabel label={label} style={Object.assign({}, labelStyleIcon, labelStyle)} />
+      <FlatButtonLabel label={label} style={mergedLabelStyles} />
     ) : undefined;
 
     // Place label before or after children.
@@ -266,7 +262,6 @@ class FlatButton extends Component {
         disabled={disabled}
         focusRippleColor={buttonRippleColor}
         focusRippleOpacity={0.3}
-        linkButton={linkButton}
         onKeyboardFocus={this.handleKeyboardFocus}
         onMouseLeave={this.handleMouseLeave}
         onMouseEnter={this.handleMouseEnter}

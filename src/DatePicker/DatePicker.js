@@ -1,8 +1,7 @@
 import React, {Component, PropTypes} from 'react';
-import {formatIso, isEqualDate} from './dateUtils';
+import {dateTimeFormat, formatIso, isEqualDate} from './dateUtils';
 import DatePickerDialog from './DatePickerDialog';
 import TextField from '../TextField';
-import deprecated from '../utils/deprecatedPropType';
 
 class DatePicker extends Component {
   static propTypes = {
@@ -11,6 +10,8 @@ class DatePicker extends Component {
      * The constructor must follow this specification: ECMAScript Internationalization API 1.0 (ECMA-402).
      * `Intl.DateTimeFormat` is supported by most modern browsers, see http://caniuse.com/#search=intl,
      * otherwise https://github.com/andyearnshaw/Intl.js is a good polyfill.
+     *
+     * By default, a built-in `DateTimeFormat` is used which supports the 'en-US' `locale`.
      */
     DateTimeFormat: PropTypes.func,
     /**
@@ -22,7 +23,11 @@ class DatePicker extends Component {
      */
     cancelLabel: PropTypes.node,
     /**
-     * Used to control how the DatePicker will be displayed when a user tries to set a date.
+     * The css class name of the root element.
+     */
+    className: PropTypes.string,
+    /**
+     * Used to control how the Date Picker will be displayed when the input field is focused.
      * `dialog` (default) displays the DatePicker as a dialog with a modal.
      * `inline` displays the DatePicker below the input field (similar to auto complete).
      */
@@ -33,6 +38,10 @@ class DatePicker extends Component {
      * prop with `value` taking precedence.
      */
     defaultDate: PropTypes.object,
+    /**
+     * Override the inline-styles of DatePickerDialog's Container element.
+     */
+    dialogContainerStyle: PropTypes.object,
     /**
      * Disables the year selection in the date picker.
      */
@@ -49,7 +58,7 @@ class DatePicker extends Component {
      */
     firstDayOfWeek: PropTypes.number,
     /**
-     * This function is called to format the date displayed in the input box, and should return a string.
+     * This function is called to format the date displayed in the input field, and should return a string.
      * By default if no `locale` and `DateTimeFormat` is provided date objects are formatted to ISO 8601 YYYY-MM-DD.
      *
      * @param {object} date Date object to be formatted.
@@ -57,8 +66,8 @@ class DatePicker extends Component {
      */
     formatDate: PropTypes.func,
     /**
-     * Locale used for formatting the dialog date strings. If you are not using the default value, you
-     * have to provide a `DateTimeFormat` that supports it.
+     * Locale used for formatting the `DatePicker` date strings. Other than for 'en-US', you
+     * must provide a `DateTimeFormat` that supports the chosen `locale`.
      */
     locale: PropTypes.string,
     /**
@@ -93,8 +102,6 @@ class DatePicker extends Component {
     onDismiss: PropTypes.func,
     /**
      * Callback function that is fired when the Date Picker's `TextField` gains focus.
-     *
-     * @param {object} event `focus` event targeting the `TextField`.
      */
     onFocus: PropTypes.func,
     /**
@@ -125,25 +132,15 @@ class DatePicker extends Component {
     /**
      * Sets the date for the Date Picker programmatically.
      */
-    value: PropTypes.any,
-    /**
-     * Creates a ValueLink with the value of date picker.
-     */
-    valueLink: PropTypes.object,
-    /**
-     * Wordings used inside the button of the dialog.
-     */
-    wordings: deprecated(PropTypes.object, 'Instead, use `cancelLabel` and `okLabel`.'),
+    value: PropTypes.object,
   };
 
   static defaultProps = {
     autoOk: false,
-    cancelLabel: 'Cancel',
     container: 'dialog',
     disabled: false,
     disableYearSelection: false,
     firstDayOfWeek: 1,
-    okLabel: 'OK',
     style: {},
   };
 
@@ -209,40 +206,44 @@ class DatePicker extends Component {
         date: date,
       });
     }
-    if (this.props.onChange) this.props.onChange(null, date);
-    if (this.props.valueLink) this.props.valueLink.requestChange(date);
+    if (this.props.onChange) {
+      this.props.onChange(null, date);
+    }
   };
 
   handleFocus = (event) => {
     event.target.blur();
-    if (this.props.onFocus) this.props.onFocus(event);
+    if (this.props.onFocus) {
+      this.props.onFocus(event);
+    }
   };
 
   handleTouchTap = (event) => {
-    if (this.props.onTouchTap) this.props.onTouchTap(event);
+    if (this.props.onTouchTap) {
+      this.props.onTouchTap(event);
+    }
 
-    if (!this.props.disabled)
+    if (!this.props.disabled) {
       setTimeout(() => {
         this.openDialog();
       }, 0);
+    }
   };
 
   isControlled() {
-    return this.props.hasOwnProperty('value') ||
-      this.props.hasOwnProperty('valueLink');
+    return this.props.hasOwnProperty('value');
   }
 
   getControlledDate(props = this.props) {
     if (props.value instanceof Date) {
       return props.value;
-    } else if (props.valueLink && props.valueLink.value instanceof Date) {
-      return props.valueLink.value;
     }
   }
 
   formatDate = (date) => {
-    if (this.props.locale && this.props.DateTimeFormat) {
-      return new this.props.DateTimeFormat(this.props.locale, {
+    if (this.props.locale) {
+      const DateTimeFormat = this.props.DateTimeFormat || dateTimeFormat;
+      return new DateTimeFormat(this.props.locale, {
         day: 'numeric',
         month: 'numeric',
         year: 'numeric',
@@ -257,10 +258,13 @@ class DatePicker extends Component {
       DateTimeFormat,
       autoOk,
       cancelLabel,
+      className,
       container,
       defaultDate, // eslint-disable-line no-unused-vars
+      dialogContainerStyle,
       disableYearSelection,
       firstDayOfWeek,
+      formatDate: formatDateProp,
       locale,
       maxDate,
       minDate,
@@ -268,34 +272,33 @@ class DatePicker extends Component {
       okLabel,
       onDismiss,
       onFocus, // eslint-disable-line no-unused-vars
-      onShow, // eslint-disable-line no-unused-vars
+      onShow,
       onTouchTap, // eslint-disable-line no-unused-vars
+      shouldDisableDate,
       style,
       textFieldStyle,
-      valueLink, // eslint-disable-line no-unused-vars
-      wordings,
-      shouldDisableDate,
       ...other,
     } = this.props;
 
     const {prepareStyles} = this.context.muiTheme;
-    const formatDate = this.props.formatDate || this.formatDate;
+    const formatDate = formatDateProp || this.formatDate;
 
     return (
-      <div style={prepareStyles(Object.assign({}, style))}>
+      <div className={className} style={prepareStyles(Object.assign({}, style))}>
         <TextField
           {...other}
-          style={textFieldStyle}
-          ref="input"
-          value={this.state.date ? formatDate(this.state.date) : ''}
           onFocus={this.handleFocus}
           onTouchTap={this.handleTouchTap}
+          ref="input"
+          style={textFieldStyle}
+          value={this.state.date ? formatDate(this.state.date) : ''}
         />
         <DatePickerDialog
           DateTimeFormat={DateTimeFormat}
           autoOk={autoOk}
           cancelLabel={cancelLabel}
           container={container}
+          containerStyle={dialogContainerStyle}
           disableYearSelection={disableYearSelection}
           firstDayOfWeek={firstDayOfWeek}
           initialDate={this.state.dialogDate}
@@ -309,7 +312,6 @@ class DatePicker extends Component {
           onDismiss={onDismiss}
           ref="dialogWindow"
           shouldDisableDate={shouldDisableDate}
-          wordings={wordings}
         />
       </div>
     );

@@ -4,8 +4,14 @@ import EventListener from 'react-event-listener';
 import RenderToLayer from '../internal/RenderToLayer';
 import propTypes from '../utils/propTypes';
 import Paper from '../Paper';
-import throttle from 'lodash.throttle';
+import throttle from 'lodash/throttle';
 import PopoverAnimationDefault from './PopoverAnimationDefault';
+
+const styles = {
+  root: {
+    display: 'none',
+  },
+};
 
 class Popover extends Component {
   static propTypes = {
@@ -112,7 +118,7 @@ class Popover extends Component {
   constructor(props, context) {
     super(props, context);
     this.handleResize = throttle(this.setPlacement, 100);
-    this.handleScroll = throttle(this.setPlacement.bind(this, true), 100);
+    this.handleScroll = throttle(this.setPlacement.bind(this, true), 50);
 
     this.state = {
       open: props.open,
@@ -130,10 +136,13 @@ class Popover extends Component {
         });
       } else {
         if (nextProps.animated) {
+          if (this.timeout !== null) return;
           this.setState({closing: true});
           this.timeout = setTimeout(() => {
             this.setState({
               open: false,
+            }, () => {
+              this.timeout = null;
             });
           }, 500);
         } else {
@@ -150,8 +159,13 @@ class Popover extends Component {
   }
 
   componentWillUnmount() {
-    clearTimeout(this.timeout);
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
   }
+
+  timeout = null;
 
   renderLayer = () => {
     const {
@@ -272,7 +286,7 @@ class Popover extends Component {
     if (anchorPosition.top < 0 ||
       anchorPosition.top > window.innerHeight ||
       anchorPosition.left < 0 ||
-      anchorPosition.left > window.innerWith) {
+      anchorPosition.left > window.innerWidth) {
       this.requestClose('offScreen');
     }
   }
@@ -348,9 +362,9 @@ class Popover extends Component {
 
   render() {
     return (
-      <div style={{display: 'none'}}>
+      <div style={styles.root}>
         <EventListener
-          elementName="window"
+          target="window"
           onScroll={this.handleScroll}
           onResize={this.handleResize}
         />

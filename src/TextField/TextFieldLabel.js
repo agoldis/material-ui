@@ -8,15 +8,15 @@ function getStyles(props) {
     top: 38,
     transition: transitions.easeOut(),
     zIndex: 1, // Needed to display label above Chrome's autocomplete field background
-    cursor: props.disabled ? 'default' : 'text',
-    transform: 'scale(1) translate3d(0, 0, 0)',
+    cursor: props.disabled ? 'not-allowed' : 'text',
+    transform: 'scale(1) translate(0, 0)',
     transformOrigin: 'left top',
     pointerEvents: 'auto',
     userSelect: 'none',
   };
 
   const shrinkStyles = props.shrink ? Object.assign({
-    transform: 'perspective(1px) scale(0.75) translate3d(0, -28px, 0)',
+    transform: 'scale(0.75) translate(0, -28px)',
     pointerEvents: 'none',
   }, props.shrinkStyle) : null;
 
@@ -25,15 +25,39 @@ function getStyles(props) {
   };
 }
 
-const propTypes = {
-  /**
-   * The css class name of the root element.
-   */
-  className: PropTypes.string,
+const TextFieldLabel = (props) => {
+  const {
+    muiTheme,
+    className,
+    children,
+    htmlFor,
+    onTouchTap,
+  } = props;
+
+  const {prepareStyles} = muiTheme;
+  const styles = getStyles(props);
+
+  return (
+    <label
+      className={className}
+      style={prepareStyles(styles.root)}
+      htmlFor={htmlFor}
+      onTouchTap={onTouchTap}
+    >
+      {children}
+    </label>
+  );
+};
+
+TextFieldLabel.propTypes = {
   /**
    * The label contents.
    */
   children: PropTypes.node,
+  /**
+   * The css class name of the root element.
+   */
+  className: PropTypes.string,
   /**
    * Disables the label if set to true.
    */
@@ -65,36 +89,9 @@ const propTypes = {
   style: PropTypes.object,
 };
 
-const defaultProps = {
+TextFieldLabel.defaultProps = {
   disabled: false,
   shrink: false,
 };
-
-const TextFieldLabel = (props) => {
-  const {
-    muiTheme,
-    className,
-    children,
-    htmlFor,
-    onTouchTap,
-  } = props;
-
-  const {prepareStyles} = muiTheme;
-  const styles = getStyles(props);
-
-  return (
-    <label
-      className={className}
-      style={prepareStyles(styles.root)}
-      htmlFor={htmlFor}
-      onTouchTap={onTouchTap}
-    >
-      {children}
-    </label>
-  );
-};
-
-TextFieldLabel.propTypes = propTypes;
-TextFieldLabel.defaultProps = defaultProps;
 
 export default TextFieldLabel;

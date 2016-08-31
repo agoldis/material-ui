@@ -4,7 +4,7 @@ import DropDownArrow from '../svg-icons/navigation/arrow-drop-down';
 import Menu from '../Menu/Menu';
 import ClearFix from '../internal/ClearFix';
 import Popover from '../Popover/Popover';
-import PopoverAnimationFromTop from '../Popover/PopoverAnimationVertical';
+import PopoverAnimationVertical from '../Popover/PopoverAnimationVertical';
 
 const anchorOrigin = {
   vertical: 'top',
@@ -75,6 +75,15 @@ class DropDownMenu extends Component {
   // than just the parent.
   static propTypes = {
     /**
+     * If true, the popover will apply transitions when
+     * it gets added to the DOM.
+     */
+    animated: PropTypes.bool,
+    /**
+     * Override the default animation component used.
+     */
+    animation: PropTypes.func,
+    /**
      * The width will automatically be set according to the items inside the menu.
      * To control this width in css instead, set this prop to `false`.
      */
@@ -140,6 +149,7 @@ class DropDownMenu extends Component {
   };
 
   static defaultProps = {
+    animated: true,
     autoWidth: true,
     disabled: false,
     openImmediately: false,
@@ -220,15 +230,20 @@ class DropDownMenu extends Component {
   };
 
   handleItemTouchTap = (event, child, index) => {
-    this.props.onChange(event, index, child.props.value);
-
+    event.persist();
     this.setState({
       open: false,
+    }, () => {
+      if (this.props.onChange) {
+        this.props.onChange(event, index, child.props.value);
+      }
     });
   };
 
   render() {
     const {
+      animated,
+      animation,
       autoWidth,
       children,
       className,
@@ -236,7 +251,8 @@ class DropDownMenu extends Component {
       labelStyle,
       listStyle,
       maxHeight,
-      menuStyle: menuStyleProps,
+      menuStyle: menuStyleProp,
+      openImmediately, // eslint-disable-line no-unused-vars
       style,
       underlineStyle,
       value,
@@ -263,9 +279,9 @@ class DropDownMenu extends Component {
     if (anchorEl && !autoWidth) {
       menuStyle = Object.assign({
         width: anchorEl.clientWidth,
-      }, menuStyleProps);
+      }, menuStyleProp);
     } else {
-      menuStyle = menuStyleProps;
+      menuStyle = menuStyleProp;
     }
 
     return (
@@ -287,8 +303,9 @@ class DropDownMenu extends Component {
         <Popover
           anchorOrigin={anchorOrigin}
           anchorEl={anchorEl}
-          animation={PopoverAnimationFromTop}
+          animation={animation || PopoverAnimationVertical}
           open={open}
+          animated={animated}
           onRequestClose={this.handleRequestCloseMenu}
         >
           <Menu

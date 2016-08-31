@@ -4,6 +4,7 @@ import Events from '../utils/events';
 import propTypes from '../utils/propTypes';
 import Menu from '../Menu/Menu';
 import Popover from '../Popover/Popover';
+import warning from 'warning';
 
 class IconMenu extends Component {
   static muiName = 'IconMenu';
@@ -17,6 +18,15 @@ class IconMenu extends Component {
      * horizontal: [left, center, right].
      */
     anchorOrigin: propTypes.origin,
+    /**
+     * If true, the popover will apply transitions when
+     * it gets added to the DOM.
+     */
+    animated: PropTypes.bool,
+    /**
+     * Override the default animation component used.
+     */
+    animation: PropTypes.func,
     /**
      * Should be used to pass `MenuItem` components.
      */
@@ -55,29 +65,13 @@ class IconMenu extends Component {
      * @param {boolean} keyboardFocused If true, the `IconButton` element is focused.
      */
     onKeyboardFocus: PropTypes.func,
-    /**
-     * Callback function fired when a mouse button is pressed down on the `IconButton` element.
-     *
-     * @param {object} event `mousedown` event targeting the `IconButton` element.
-     */
+    /** @ignore */
     onMouseDown: PropTypes.func,
-    /**
-     * Callback function fired when the mouse enters the `IconButton` element.
-     *
-     * @param {object} event `mouseenter` event targeting the `IconButton` element.
-     */
+    /** @ignore */
     onMouseEnter: PropTypes.func,
-    /**
-     * Callback function fired when the mouse leaves the `IconButton` element.
-     *
-     * @param {object} event `mouseleave` event targeting the `IconButton` element.
-     */
+    /** @ignore */
     onMouseLeave: PropTypes.func,
-    /**
-     * Callback function fired when a mouse button is released on the `IconButton` element.
-     *
-     * @param {object} event `mouseup` event targeting the `IconButton` element.
-     */
+    /** @ignore */
     onMouseUp: PropTypes.func,
     /**
      * Callback function fired when the `open` state of the menu is requested to be changed.
@@ -129,6 +123,7 @@ class IconMenu extends Component {
       vertical: 'top',
       horizontal: 'left',
     },
+    animated: true,
     multiple: false,
     open: null,
     onItemTouchTap: () => {},
@@ -137,8 +132,8 @@ class IconMenu extends Component {
     onMouseLeave: () => {},
     onMouseEnter: () => {},
     onMouseUp: () => {},
-    onTouchTap: () => {},
     onRequestChange: () => {},
+    onTouchTap: () => {},
     targetOrigin: {
       vertical: 'top',
       horizontal: 'left',
@@ -234,6 +229,8 @@ class IconMenu extends Component {
     const {
       anchorOrigin,
       className,
+      animated,
+      animation,
       iconButtonElement,
       iconStyle,
       onItemTouchTap, // eslint-disable-line no-unused-vars
@@ -242,10 +239,12 @@ class IconMenu extends Component {
       onMouseLeave,
       onMouseEnter,
       onMouseUp,
+      onRequestChange, // eslint-disable-line no-unused-vars
       onTouchTap,
       menuStyle,
       style,
       targetOrigin,
+      touchTapCloseDelay, // eslint-disable-line no-unused-vars
       useLayerForClickAway,
       ...other,
     } = this.props;
@@ -266,12 +265,17 @@ class IconMenu extends Component {
     const mergedRootStyles = Object.assign(styles.root, style);
     const mergedMenuStyles = Object.assign(styles.menu, menuStyle);
 
+    warning(iconButtonElement.type.muiName === 'IconButton',
+      'We are expecting an <IconButton /> to be passed to the `iconButtonElement` property.');
+
     const iconButton = React.cloneElement(iconButtonElement, {
       onKeyboardFocus: onKeyboardFocus,
       iconStyle: Object.assign({}, iconStyle, iconButtonElement.props.iconStyle),
       onTouchTap: (event) => {
         this.open(Events.isKeyboard(event) ? 'keyboard' : 'iconTap', event);
-        if (iconButtonElement.props.onTouchTap) iconButtonElement.props.onTouchTap(event);
+        if (iconButtonElement.props.onTouchTap) {
+          iconButtonElement.props.onTouchTap(event);
+        }
       },
       ref: 'iconButton',
     });
@@ -279,7 +283,6 @@ class IconMenu extends Component {
     const menu = (
       <Menu
         {...other}
-        animateOpen={true}
         initiallyKeyboardFocused={this.state.menuInitiallyKeyboardFocused}
         onEscKeyDown={this.handleEscKeyDownMenu}
         onItemTouchTap={this.handleItemTouchTap}
@@ -309,6 +312,8 @@ class IconMenu extends Component {
           childContextTypes={this.constructor.childContextTypes}
           useLayerForClickAway={useLayerForClickAway}
           onRequestClose={this.handleRequestClose}
+          animated={animated}
+          animation={animation}
           context={this.context}
         >
           {menu}

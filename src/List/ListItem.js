@@ -49,7 +49,7 @@ function getStyles(props, context, state) {
 
     // This inner div is needed so that ripples will span the entire container
     innerDiv: {
-      marginLeft: nestedLevel * muiTheme.listItem.nestedLevelDepth,
+      marginLeft: nestedLevel * listItem.nestedLevelDepth,
       paddingLeft: leftIcon || leftAvatar || leftCheckbox || insetChildren ? 72 : 16,
       paddingRight: rightIcon || rightAvatar || rightIconButton ? 56 : rightToggle ? 72 : 16,
       paddingBottom: singleAvatar ? 20 : 16,
@@ -67,14 +67,10 @@ function getStyles(props, context, state) {
     },
 
     leftIcon: {
-      color: listItem.leftIconColor,
-      fill: listItem.leftIconColor,
       left: 4,
     },
 
     rightIcon: {
-      color: listItem.rightIconColor,
-      fill: listItem.rightIconColor,
       right: 4,
     },
 
@@ -213,17 +209,9 @@ class ListItem extends Component {
      * @param {boolean} isKeyboardFocused If true, the `ListItem` is focused.
      */
     onKeyboardFocus: PropTypes.func,
-    /**
-     * Callback function fired when the mouse enters the `ListItem`.
-     *
-     * @param {object} event `mouseenter` event targeting the `ListItem`.
-     */
+    /** @ignore */
     onMouseEnter: PropTypes.func,
-    /**
-     * Callback function fired when the mouse leaves the `ListItem`.
-     *
-     * @param {object} event `mouseleave` event targeting the `ListItem`.
-     */
+    /** @ignore */
     onMouseLeave: PropTypes.func,
     /**
      * Callbak function fired when the `ListItem` toggles its nested list.
@@ -231,18 +219,14 @@ class ListItem extends Component {
      * @param {object} listItem The `ListItem`.
      */
     onNestedListToggle: PropTypes.func,
-    /**
-     * Callback function fired when the `ListItem` is touched.
-     *
-     * @param {object} event `touchstart` event targeting the `ListItem`.
-     */
+    /** @ignore */
     onTouchStart: PropTypes.func,
-    /**
-     * Callback function fired when the `ListItem` is touch-tapped.
-     *
-     * @param {object} event TouchTap event targeting the `ListItem`.
-     */
+    /** @ignore */
     onTouchTap: PropTypes.func,
+    /**
+     * Control toggle state of nested list.
+     */
+    open: PropTypes.bool,
     /**
      * This is the block element that contains the primary text.
      * If a string is passed in, a div tag will be rendered.
@@ -302,6 +286,7 @@ class ListItem extends Component {
     onMouseLeave: () => {},
     onNestedListToggle: () => {},
     onTouchStart: () => {},
+    open: null,
     primaryTogglesNestedList: false,
     secondaryTextLines: 1,
   };
@@ -313,16 +298,29 @@ class ListItem extends Component {
   state = {
     hovered: false,
     isKeyboardFocused: false,
-    open: this.props.initiallyOpen,
+    open: false,
     rightIconButtonHovered: false,
     rightIconButtonKeyboardFocused: false,
     touch: false,
   };
 
-  shouldComponentUpdate(nextProps, nextState) {
+  componentWillMount() {
+    this.setState({
+      open: this.props.open === null ? this.props.initiallyOpen === true : this.props.open,
+    });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    // update the state when the component is controlled.
+    if (nextProps.open !== null)
+      this.setState({open: nextProps.open});
+  }
+
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
     return (
       !shallowEqual(this.props, nextProps) ||
-      !shallowEqual(this.state, nextState)
+      !shallowEqual(this.state, nextState) ||
+      !shallowEqual(this.context, nextContext)
     );
   }
 
@@ -432,8 +430,9 @@ class ListItem extends Component {
 
   handleNestedListToggle = (event) => {
     event.stopPropagation();
-    this.setState({open: !this.state.open});
-    this.props.onNestedListToggle(this);
+    this.setState({open: !this.state.open}, () => {
+      this.props.onNestedListToggle(this);
+    });
   };
 
   handleRightIconButtonKeyboardFocus = (event, isKeyboardFocused) => {
@@ -499,6 +498,7 @@ class ListItem extends Component {
       children,
       disabled,
       disableKeyboardFocus,
+      initiallyOpen, // eslint-disable-line no-unused-vars
       innerDivStyle,
       insetChildren, // eslint-disable-line no-unused-vars
       leftAvatar,
@@ -508,8 +508,9 @@ class ListItem extends Component {
       nestedLevel,
       nestedListStyle,
       onKeyboardFocus, // eslint-disable-line no-unused-vars
-      onMouseLeave, // eslint-disable-line no-unused-vars
       onMouseEnter, // eslint-disable-line no-unused-vars
+      onMouseLeave, // eslint-disable-line no-unused-vars
+      onNestedListToggle, // eslint-disable-line no-unused-vars
       onTouchStart, // eslint-disable-line no-unused-vars
       onTouchTap,
       rightAvatar,
@@ -529,18 +530,26 @@ class ListItem extends Component {
     const contentChildren = [children];
 
     if (leftIcon) {
+      const additionalProps = {
+        color: leftIcon.props.color || this.context.muiTheme.listItem.leftIconColor,
+      };
       this.pushElement(
         contentChildren,
         leftIcon,
-        Object.assign({}, styles.icons, styles.leftIcon)
+        Object.assign({}, styles.icons, styles.leftIcon),
+        additionalProps
       );
     }
 
     if (rightIcon) {
+      const additionalProps = {
+        color: rightIcon.props.color || this.context.muiTheme.listItem.rightIconColor,
+      };
       this.pushElement(
         contentChildren,
         rightIcon,
-        Object.assign({}, styles.icons, styles.rightIcon)
+        Object.assign({}, styles.icons, styles.rightIcon),
+        additionalProps
       );
     }
 
@@ -627,23 +636,23 @@ class ListItem extends Component {
     }
 
     const nestedList = nestedItems.length ? (
-      <NestedList nestedLevel={nestedLevel + 1} open={this.state.open} style={nestedListStyle}>
+      <NestedList nestedLevel={nestedLevel} open={this.state.open} style={nestedListStyle}>
         {nestedItems}
       </NestedList>
     ) : undefined;
 
-    const hasCheckbox = leftCheckbox || rightToggle;
+    const simpleLabel = !primaryTogglesNestedList && (leftCheckbox || rightToggle);
 
     return (
       <div>
         {
-          hasCheckbox ? this.createLabelElement(styles, contentChildren, other) :
+          simpleLabel ? this.createLabelElement(styles, contentChildren, other) :
           disabled ? this.createDisabledElement(styles, contentChildren, other) : (
             <EnhancedButton
+              containerElement={'span'}
               {...other}
               disabled={disabled}
               disableKeyboardFocus={disableKeyboardFocus || this.state.rightIconButtonKeyboardFocused}
-              linkButton={true}
               onKeyboardFocus={this.handleKeyboardFocus}
               onMouseLeave={this.handleMouseLeave}
               onMouseEnter={this.handleMouseEnter}

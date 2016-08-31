@@ -8,6 +8,7 @@ import getMuiTheme from '../styles/getMuiTheme';
 describe('<Avatar />', () => {
   const muiTheme = getMuiTheme();
   const shallowWithContext = (node) => shallow(node, {context: {muiTheme}});
+
   const testChildren = <div className="unique">Hello World</div>;
 
   it('renders children by default', () => {
@@ -35,10 +36,10 @@ describe('<Avatar />', () => {
     );
 
     assert.notOk(!wrapper.contains(testChildren), 'should not contain the children');
-    assert.ok(wrapper.is('div'), 'should be a div');
-    assert.ok(wrapper.is({style: {background: 'url(face.jpg)'}}), 'should set background url');
+    assert.ok(wrapper.is('img'), 'should be an image');
+    assert.ok(wrapper.is({src: 'face.jpg'}), 'should have the src passed into props');
 
     wrapper.setProps({src: 'meow.jpg'});
-    assert.ok(wrapper.is({style: {background: 'url(meow.jpg)'}}), 'should have changed the background url');
+    assert.ok(wrapper.is({src: 'meow.jpg'}), 'should have changed the src');
   });
 });

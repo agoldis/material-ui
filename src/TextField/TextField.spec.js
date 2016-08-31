@@ -18,6 +18,7 @@ describe('<TextField />', () => {
           assert.strictEqual(value, 'woof', 'should pass the value as the 2nd arg');
           done();
         }}
+        id="unique"
       />
     );
 
@@ -48,7 +49,7 @@ describe('<TextField />', () => {
         defaultValue="default value"
         value={null}
       />
-      );
+    );
     assert.strictEqual(wrapper.find(TextFieldLabel).props().shrink, true, 'should shrink TextFieldLabel');
 
     // make input change
@@ -61,5 +62,56 @@ describe('<TextField />', () => {
     wrapper.setProps({value: null});
     assert.strictEqual(wrapper.state().isClean, false);
     assert.strictEqual(wrapper.find(TextFieldLabel).props().shrink, false, 'should not shrink TextFieldLabel');
+  });
+
+  describe('prop: children', () => {
+    it('should forward any property to the root', () => {
+      const wrapper = shallowWithContext(
+        <TextField data-test="hello" id="unique">
+          <div />
+        </TextField>
+      );
+
+      assert.strictEqual(
+        wrapper.is('[data-test="hello"]'), true,
+        'The root element should receive any additional properties'
+      );
+    });
+  });
+
+  describe('isValid', () => {
+    it('should consider the input as empty', () => {
+      const values = [
+        undefined,
+        null,
+        '',
+      ];
+
+      values.forEach((value) => {
+        const wrapper = shallowWithContext(
+          <TextField value={value} id="unique" />
+        );
+
+        assert.strictEqual(wrapper.state().hasValue, false,
+          `Should consider '${value}' as empty`);
+      });
+    });
+
+    it('should consider the input as not empty', () => {
+      const values = [
+        ' ',
+        0,
+        false,
+      ];
+
+      values.forEach((value) => {
+        const wrapper = shallowWithContext(
+          <TextField value={value} id="unique" />
+        );
+
+        assert.strictEqual(wrapper.state().hasValue, true,
+          `Should consider '${value}' as not empty`);
+      });
+    });
   });
 });

@@ -2,8 +2,10 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 import {assert} from 'chai';
+
 import FlatButton from './FlatButton';
 import getMuiTheme from '../styles/getMuiTheme';
+import ActionAndroid from '../svg-icons/action/android';
 
 describe('<FlatButton />', () => {
   const muiTheme = getMuiTheme();
@@ -30,7 +32,6 @@ describe('<FlatButton />', () => {
       ariaLabel: 'Say hello world',
       disabled: true,
       href: 'http://google.com',
-      linkButton: true,
       name: 'Hello World',
     };
 
@@ -51,7 +52,7 @@ describe('<FlatButton />', () => {
     );
     const icon = wrapper.children().at(0);
     const label = wrapper.children().at(1);
-    assert.ok(icon.is('span'), );
+    assert.ok(icon.is('span'));
     assert.ok(icon.hasClass('test-icon'));
     assert.ok(label.is('FlatButtonLabel'));
     assert.strictEqual(label.node.props.label, 'Hello', 'says hello');
@@ -67,7 +68,7 @@ describe('<FlatButton />', () => {
     );
     const icon = wrapper.children().at(1);
     const label = wrapper.children().at(0);
-    assert.ok(icon.is('span'), );
+    assert.ok(icon.is('span'));
     assert.ok(icon.hasClass('test-icon'));
     assert.ok(label.is('FlatButtonLabel'));
     assert.strictEqual(label.node.props.label, 'Hello', 'says hello');
@@ -90,6 +91,19 @@ describe('<FlatButton />', () => {
     }));
     assert.ok(icon.is('span'));
     assert.ok(icon.is({color: flatButtonTheme.primaryTextColor}));
+  });
+
+  it('colors the icon with the passed color in prop', () => {
+    const color = 'white';
+    const wrapper = shallowWithContext(
+      <FlatButton
+        backgroundColor="#a4c639"
+        hoverColor="#8AA62F"
+        icon={<ActionAndroid color={color} />}
+      />
+    );
+    const icon = wrapper.find('ActionAndroid');
+    assert.strictEqual(icon.prop('color'), color, 'icon should have same color as that of color prop');
   });
 
   it('colors the button the secondary theme color', () => {
@@ -134,5 +148,47 @@ describe('<FlatButton />', () => {
     );
     assert.strictEqual(wrapper.node.props.focusRippleColor, 'yellow', 'should be yellow');
     assert.strictEqual(wrapper.node.props.touchRippleColor, 'yellow', 'should be yellow');
+  });
+
+  describe('validateLabel', () => {
+    const validateLabel = FlatButton.propTypes.label;
+
+    it('should throw when using wrong label', () => {
+      assert.strictEqual(validateLabel({}, 'label', 'FlatButton').message,
+        'Required prop label or children or icon was not specified in FlatButton.',
+        'should return an error'
+      );
+    });
+
+    it('should not throw when using a valid label', () => {
+      assert.strictEqual(validateLabel({
+        label: 0,
+      }, 'label', 'FlatButton'), undefined);
+    });
+  });
+
+  describe('hover state', () => {
+    it('should reset the hover state when disabled', () => {
+      const wrapper = shallowWithContext(
+        <FlatButton label="foo" />
+      );
+
+      wrapper.simulate('mouseEnter');
+      assert.strictEqual(wrapper.state().hovered, true, 'should respond to the event');
+      wrapper.setProps({
+        disabled: true,
+      });
+      assert.strictEqual(wrapper.state().hovered, false, 'should reset the state');
+    });
+  });
+
+  describe('props: icon', () => {
+    it('should keep the style set on the icon', () => {
+      const wrapper = shallowWithContext(
+        <FlatButton icon={<ActionAndroid style={{foo: 'bar'}} />} />
+      );
+
+      assert.strictEqual(wrapper.find(ActionAndroid).props().style.foo, 'bar');
+    });
   });
 });

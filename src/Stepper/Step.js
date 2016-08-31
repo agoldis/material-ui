@@ -19,8 +19,7 @@ const getStyles = ({index}, {stepper}) => {
   return styles;
 };
 
-export default class Step extends Component {
-
+class Step extends Component {
   static propTypes = {
     /**
      * Sets the step as active. Is passed to child components.
@@ -72,12 +71,17 @@ export default class Step extends Component {
 
     return React.cloneElement(child, Object.assign(
       {active, completed, disabled, icon, last},
-      child.props,
+      child.props
     ));
   }
 
   render() {
     const {
+      active, // eslint-disable-line no-unused-vars
+      completed, // eslint-disable-line no-unused-vars
+      disabled, // eslint-disable-line no-unused-vars
+      index, // eslint-disable-line no-unused-vars
+      last, // eslint-disable-line no-unused-vars
       children,
       style,
       ...other,
@@ -93,3 +97,5 @@ export default class Step extends Component {
     );
   }
 }
+
+export default Step;

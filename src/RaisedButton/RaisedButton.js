@@ -1,4 +1,4 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component, cloneElement, PropTypes} from 'react';
 import transitions from '../styles/transitions';
 import {fade} from '../utils/colorManipulator';
 import {createChildFragment} from '../utils/childUtils';
@@ -6,8 +6,10 @@ import EnhancedButton from '../internal/EnhancedButton';
 import Paper from '../Paper';
 
 function validateLabel(props, propName, componentName) {
-  if (!props.children && !props.label && !props.icon) {
-    return new Error(`Required prop label or children or icon was not specified in ${componentName}.`);
+  if (process.env.NODE_ENV !== 'production') {
+    if (!props.children && (props.label !== 0 && !props.label) && !props.icon) {
+      return new Error(`Required prop label or children or icon was not specified in ${componentName}.`);
+    }
   }
 }
 
@@ -54,23 +56,22 @@ function getStyles(props, context, state) {
     }
   }
 
-  const buttonHeight = style && style.height || `${button.height}px`;
+  const buttonHeight = style && style.height || button.height;
+  const borderRadius = 2;
 
   return {
     root: {
       display: 'inline-block',
-      minWidth: fullWidth ? '100%' : button.minWidth,
-      height: buttonHeight,
       transition: transitions.easeOut(),
+      minWidth: fullWidth ? '100%' : button.minWidth,
     },
-    container: {
-      lineHeight: buttonHeight,
+    button: {
       position: 'relative',
-      height: '100%',
+      height: buttonHeight,
+      lineHeight: `${buttonHeight}px`,
       width: '100%',
       padding: 0,
-      overflow: 'hidden',
-      borderRadius: 2,
+      borderRadius: borderRadius,
       transition: transitions.easeOut(),
       backgroundColor: backgroundColor,
       // That's the default value for a button but not a link
@@ -78,9 +79,8 @@ function getStyles(props, context, state) {
     },
     label: {
       position: 'relative',
-      verticalAlign: 'middle',
       opacity: 1,
-      fontSize: '14px',
+      fontSize: raisedButton.fontSize,
       letterSpacing: 0,
       textTransform: raisedButton.textTransform || button.textTransform || 'uppercase',
       fontWeight: raisedButton.fontWeight,
@@ -97,6 +97,7 @@ function getStyles(props, context, state) {
     },
     overlay: {
       height: buttonHeight,
+      borderRadius: borderRadius,
       backgroundColor: (state.keyboardFocused || state.hovered) && !disabled &&
         fade(labelColor, amount),
       transition: transitions.easeOut(),
@@ -147,8 +148,7 @@ class RaisedButton extends Component {
      */
     fullWidth: PropTypes.bool,
     /**
-     * If `linkButton` is true, the URL to link to when the button
-     * is clicked.
+     * The URL to link to when the button is clicked.
      */
     href: PropTypes.string,
     /**
@@ -176,47 +176,17 @@ class RaisedButton extends Component {
      * Override the inline-styles of the button's label element.
      */
     labelStyle: PropTypes.object,
-    /**
-     * If true, enable the use of the `href` property to provide
-     * a URL to link to.
-     */
-    linkButton: PropTypes.bool,
-    /**
-     * Callback function fired when a mouse button is pressed down on
-     * the element.
-     *
-     * @param {object} event `mousedown` event targeting the element.
-     */
+    /** @ignore */
     onMouseDown: PropTypes.func,
-    /**
-     * Callback function fired when the mouse enters the element.
-     *
-     * @param {object} event `mouseenter` event targeting the element.
-     */
+    /** @ignore */
     onMouseEnter: PropTypes.func,
-    /**
-     * Callback function fired when the mouse leaves the element.
-     *
-     * @param {object} event `mouseleave` event targeting the element.
-     */
+    /** @ignore */
     onMouseLeave: PropTypes.func,
-    /**
-     * Callback function fired when a mouse button is released on the element.
-     *
-     * @param {object} event `mouseup` event targeting the element.
-     */
+    /** @ignore */
     onMouseUp: PropTypes.func,
-    /**
-     * Callback function fired when a touch point is removed from the element.
-     *
-     * @param {object} event `touchend` event targeting the element.
-     */
+    /** @ignore */
     onTouchEnd: PropTypes.func,
-    /**
-     * Callback function fired when the element is touched.
-     *
-     * @param {object} event `touchstart` event targeting the element.
-     */
+    /** @ignore */
     onTouchStart: PropTypes.func,
     /**
      * If true, the button will use the theme's primary color.
@@ -252,6 +222,7 @@ class RaisedButton extends Component {
 
   state = {
     hovered: false,
+    keyboardFocused: false,
     touched: false,
     initialZDepth: 0,
     zDepth: 0,
@@ -267,67 +238,104 @@ class RaisedButton extends Component {
 
   componentWillReceiveProps(nextProps) {
     const zDepth = nextProps.disabled ? 0 : 1;
-    this.setState({
+    const nextState = {
       zDepth: zDepth,
       initialZDepth: zDepth,
-    });
+    };
+
+    if (nextProps.disabled) {
+      nextState.hovered = false;
+    }
+
+    this.setState(nextState);
   }
 
   handleMouseDown = (event) => {
     // only listen to left clicks
     if (event.button === 0) {
-      this.setState({zDepth: this.state.initialZDepth + 1});
+      this.setState({
+        zDepth: this.state.initialZDepth + 1,
+      });
     }
-    if (this.props.onMouseDown) this.props.onMouseDown(event);
+    if (this.props.onMouseDown) {
+      this.props.onMouseDown(event);
+    }
   };
 
   handleMouseUp = (event) => {
-    this.setState({zDepth: this.state.initialZDepth});
-    if (this.props.onMouseUp) this.props.onMouseUp(event);
+    this.setState({
+      zDepth: this.state.initialZDepth,
+    });
+    if (this.props.onMouseUp) {
+      this.props.onMouseUp(event);
+    }
   };
 
   handleMouseLeave = (event) => {
-    if (!this.refs.container.isKeyboardFocused()) this.setState({zDepth: this.state.initialZDepth, hovered: false});
-    if (this.props.onMouseLeave) this.props.onMouseLeave(event);
+    if (!this.state.keyboardFocused) {
+      this.setState({
+        zDepth: this.state.initialZDepth,
+        hovered: false,
+      });
+    }
+    if (this.props.onMouseLeave) {
+      this.props.onMouseLeave(event);
+    }
   };
 
   handleMouseEnter = (event) => {
-    if (!this.refs.container.isKeyboardFocused() && !this.state.touch) {
-      this.setState({hovered: true});
+    if (!this.state.keyboardFocused && !this.state.touched) {
+      this.setState({
+        hovered: true,
+      });
     }
-    if (this.props.onMouseEnter) this.props.onMouseEnter(event);
+    if (this.props.onMouseEnter) {
+      this.props.onMouseEnter(event);
+    }
   };
 
   handleTouchStart = (event) => {
     this.setState({
-      touch: true,
+      touched: true,
       zDepth: this.state.initialZDepth + 1,
     });
-    if (this.props.onTouchStart) this.props.onTouchStart(event);
+
+    if (this.props.onTouchStart) {
+      this.props.onTouchStart(event);
+    }
   };
 
   handleTouchEnd = (event) => {
-    this.setState({zDepth: this.state.initialZDepth});
-    if (this.props.onTouchEnd) this.props.onTouchEnd(event);
+    this.setState({
+      zDepth: this.state.initialZDepth,
+    });
+
+    if (this.props.onTouchEnd) {
+      this.props.onTouchEnd(event);
+    }
   };
 
   handleKeyboardFocus = (event, keyboardFocused) => {
-    const zDepth = keyboardFocused && !this.props.disabled ?
-      this.state.initialZDepth + 1 : this.state.initialZDepth;
+    const zDepth = (keyboardFocused && !this.props.disabled) ? this.state.initialZDepth + 1 : this.state.initialZDepth;
 
     this.setState({
       zDepth: zDepth,
-      keyboardFocused,
+      keyboardFocused: keyboardFocused,
     });
   };
 
   render() {
     const {
+      backgroundColor, // eslint-disable-line no-unused-vars
       children,
       className,
       disabled,
+      disabledBackgroundColor, // eslint-disable-line no-unused-vars
+      disabledLabelColor, // eslint-disable-line no-unused-vars
+      fullWidth, // eslint-disable-line no-unused-vars
       icon,
       label,
+      labelColor, // eslint-disable-line no-unused-vars
       labelPosition,
       labelStyle,
       primary, // eslint-disable-line no-unused-vars
@@ -356,9 +364,9 @@ class RaisedButton extends Component {
       </span>
     );
 
-    const iconCloned = icon && React.cloneElement(icon, {
-      color: styles.label.color,
-      style: styles.icon,
+    const iconCloned = icon && cloneElement(icon, {
+      color: icon.props.color || styles.label.color,
+      style: Object.assign(styles.icon, icon.props.style),
     });
 
     // Place label before or after children.
@@ -386,7 +394,7 @@ class RaisedButton extends Component {
           {...buttonEventHandlers}
           ref="container"
           disabled={disabled}
-          style={styles.container}
+          style={styles.button}
           focusRippleColor={mergedRippleStyles.color}
           touchRippleColor={mergedRippleStyles.color}
           focusRippleOpacity={mergedRippleStyles.opacity}

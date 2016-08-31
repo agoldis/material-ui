@@ -1,8 +1,6 @@
 import React from 'react';
 import Title from 'react-title-component';
-
 import {GridList, GridTile} from 'material-ui/GridList';
-
 import MarkdownElement from '../../MarkdownElement';
 import showcaseText from './showcase.md';
 
@@ -59,6 +57,18 @@ const appList = [
     img: 'images/showcase/smaftv.png',
     link: 'http://www.smaf.tv/',
   },
+  {
+    title: 'Spouti - An events search engine',
+    author: 'Magino Marveaux-Cochet',
+    img: 'images/showcase/spouti.png',
+    link: 'https://www.spouti.com/',
+  },
+  {
+    title: 'Dearborn Denim - American made jeans',
+    author: 'Alexander Tanton',
+    img: 'images/showcase/dearborn-denim.png',
+    link: 'http://dearborndenim.us/get-my-size',
+  },
 ];
 
 const Showcase = () => (
@@ -73,7 +83,7 @@ const Showcase = () => (
       {appList.map((app) => (
         <GridTile
           key={app.title}
-          rootClass="a"
+          containerElement="a"
           href={app.link}
           target="_blank"
           title={app.title}
